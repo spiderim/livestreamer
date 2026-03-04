@@ -16,26 +16,24 @@ function getKeys() {
   };
 }
 
-export const roomService = new Proxy({} as RoomServiceClient, {
-  get(_, prop) {
-    const { apiKey, apiSecret } = getKeys();
-    const client = new RoomServiceClient(getHttpUrl(), apiKey, apiSecret);
-    return (client as Record<string, unknown>)[prop as string];
-  },
-});
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function lazyClient<T>(factory: () => T): T {
+  return new Proxy({} as T, {
+    get(_, prop) {
+      const client = factory();
+      return (client as any)[prop];
+    },
+  });
+}
 
-export const ingressClient = new Proxy({} as IngressClient, {
-  get(_, prop) {
-    const { apiKey, apiSecret } = getKeys();
-    const client = new IngressClient(getHttpUrl(), apiKey, apiSecret);
-    return (client as Record<string, unknown>)[prop as string];
-  },
-});
+export const roomService = lazyClient(
+  () => new RoomServiceClient(getHttpUrl(), getKeys().apiKey, getKeys().apiSecret)
+);
 
-export const egressClient = new Proxy({} as EgressClient, {
-  get(_, prop) {
-    const { apiKey, apiSecret } = getKeys();
-    const client = new EgressClient(getHttpUrl(), apiKey, apiSecret);
-    return (client as Record<string, unknown>)[prop as string];
-  },
-});
+export const ingressClient = lazyClient(
+  () => new IngressClient(getHttpUrl(), getKeys().apiKey, getKeys().apiSecret)
+);
+
+export const egressClient = lazyClient(
+  () => new EgressClient(getHttpUrl(), getKeys().apiKey, getKeys().apiSecret)
+);
