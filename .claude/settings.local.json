@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "*",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(node -e:*)",
+      "Bash(npx tsx:*)",
+      "Bash(ssh -i /c/Users/sonusharma/Downloads/livekit-vm_key.pem azureuser@20.235.243.246 \"sudo apt update && sudo apt upgrade -y && curl -fsSL https://get.docker.com | sh && sudo usermod -aG docker azureuser\")",
+      "Bash(ssh -i /c/Users/sonusharma/Downloads/livekit-vm_key.pem azureuser@20.235.243.246 \"curl -sSL https://get.livekit.io | bash\")",
+      "Bash(ssh:*)",
+      "Bash(curl:*)",
+      "Bash(git config:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}
