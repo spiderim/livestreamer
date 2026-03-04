@@ -1,6 +1,3 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
 name: Build and deploy Node.js app to Azure Web App - livestreamer-app
 
 on:
@@ -12,8 +9,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read #This is required for actions/checkout
 
     steps:
       - uses: actions/checkout@v4
@@ -21,33 +16,56 @@ jobs:
       - name: Set up Node.js version
         uses: actions/setup-node@v3
         with:
-          node-version: '20.x'
+          node-version: "20.x"
 
-      - name: npm install, build, and test
+      - name: npm install, build
         run: |
           npm install
-          npm run build --if-present
-          npm run test --if-present
+          npx prisma generate
+          npm run build
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      - name: Upload artifact for deployment job
-        uses: actions/upload-artifact@v4
+      - name: Copy static files to standalone
+        run: |
+          cp -R ./public ./.next/standalone/public
+          cp -R ./.next/static ./.next/standalone/.next/static
+
+      - name: Upload artifact to Azure Blob Storage
+        uses: azure/CLI@v1
         with:
-          name: node-app
-          path: .
+          inlineScript: |
+            az storage blob upload-batch \
+              --account-name storefiletransform \
+              --account-key ${{ secrets.AZURE_STORAGE_KEY }} \
+              --overwrite true \
+              --source .next/standalone \
+              --destination livestream
+        env:
+          AZURE_STORAGE_KEY: ${{ secrets.AZURE_STORAGE_KEY }}
 
   deploy:
     runs-on: ubuntu-latest
     needs: build
     permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
+      id-token: write
 
     steps:
-      - name: Download artifact from build job
-        uses: actions/download-artifact@v4
+      - name: Create destination directory
+        run: mkdir -p downloaded-artifacts
+
+      - name: Download artifact from Azure Blob Storage
+        uses: azure/CLI@v1
         with:
-          name: node-app
-      
+          inlineScript: |
+            az storage blob download-batch \
+              --account-name storefiletransform \
+              --account-key ${{ secrets.AZURE_STORAGE_KEY }} \
+              --source livestream \
+              --destination ${{ github.workspace }}/downloaded-artifacts
+        env:
+          AZURE_STORAGE_KEY: ${{ secrets.AZURE_STORAGE_KEY }}
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -55,11 +73,10 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_5A8E0C12B1534348B4E1EF9EF41192B5 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_DDCE82746C4B43D4A7E29CA80F5D2CB2 }}
 
-      - name: 'Deploy to Azure Web App'
+      - name: "Deploy to Azure Web App"
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'livestreamer-app'
-          slot-name: 'Production'
-          package: .
-          
+          app-name: "livestreamer-app"
+          slot-name: "Production"
+          package: ./downloaded-artifacts
