@@ -17,7 +17,7 @@ function getKeys() {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function lazyClient<T>(factory: () => T): T {
+function lazyClient<T extends object>(factory: () => T): T {
   return new Proxy({} as T, {
     get(_, prop) {
       const client = factory();
