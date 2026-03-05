@@ -18,11 +18,11 @@ jobs:
         with:
           node-version: "20.x"
 
-      - name: npm install, build, and test
+      - name: npm install, build
         run: |
           npm install
           npx prisma generate
-          NEXT_DISABLE_TURBOPACK=1 npx next build
+          npm run build
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 

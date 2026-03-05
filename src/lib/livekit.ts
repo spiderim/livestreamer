@@ -16,12 +16,12 @@ function getKeys() {
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function lazyClient<T extends object>(factory: () => T): T {
   return new Proxy({} as T, {
     get(_, prop) {
       const client = factory();
-      return (client as any)[prop];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return (client as Record<string, any>)[prop as string];
     },
   });
 }
