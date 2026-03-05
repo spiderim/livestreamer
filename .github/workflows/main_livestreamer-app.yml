@@ -18,22 +18,19 @@ jobs:
         with:
           node-version: "20.x"
 
-      - name: npm install and build
+      - name: npm install, build, and test
         run: |
-          npm ci
+          npm install
           npx prisma generate
-          npm run build
+          npm run build --if-present
+          npm run test --if-present
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      - name: Prepare deployment package
+      - name: Copy static files
         run: |
-          mkdir -p deploy
-          cp -R .next deploy/.next
-          cp -R node_modules deploy/node_modules
-          cp -R public deploy/public
-          cp package.json deploy/
-          cp next.config.ts deploy/
+          cp -R ./public ./.next/standalone/public
+          cp -R ./.next/static ./.next/standalone/.next/static
 
       - name: Upload artifact to Azure Blob Storage
         uses: azure/CLI@v1
@@ -43,7 +40,7 @@ jobs:
               --account-name storefiletransform \
               --account-key ${{ secrets.AZURE_STORAGE_KEY }} \
               --overwrite true \
-              --source deploy \
+              --source .next/standalone \
               --destination livestream
         env:
           AZURE_STORAGE_KEY: ${{ secrets.AZURE_STORAGE_KEY }}
