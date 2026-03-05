@@ -22,7 +22,7 @@ jobs:
         run: |
           npm install
           npx prisma generate
-          npx next build --no-turbopack
+          NEXT_DISABLE_TURBOPACK=1 npx next build
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
