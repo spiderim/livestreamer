@@ -31,6 +31,17 @@ jobs:
           cp -R ./public ./.next/standalone/public
           cp -R ./.next/static ./.next/standalone/.next/static
 
+      - name: Clear old artifacts from Azure Blob Storage
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az storage blob delete-batch \
+              --account-name storefiletransform \
+              --account-key ${{ secrets.AZURE_STORAGE_KEY }} \
+              --source livestream
+        env:
+          AZURE_STORAGE_KEY: ${{ secrets.AZURE_STORAGE_KEY }}
+
       - name: Upload artifact to Azure Blob Storage
         uses: azure/CLI@v1
         with:
